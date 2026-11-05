@@ -84,7 +84,7 @@ only that the API plumbing works. It says nothing about the strategy or the AI.
 
 ## First steps on your Mac
 
-See [docs/MAC_SETUP.md](docs/MAC_SETUP.md). The guide covers install, loading the daily token
+See [docs/MAC_SETUP.md](docs/MAC_SETUP.md). Start there: clone branch `cursor/phase0-scaffold-9adc` into `~/Documents/Dhan`, install, then open that folder in Cursor. The guide also covers loading the daily token
 safely, and `automator dhan-check`: a **read-only** check of your token, Data API plan, DDPI,
 funds, holdings, orders, static IP and live prices. It cannot place orders; a test proves that
 order endpoints are unreachable.
