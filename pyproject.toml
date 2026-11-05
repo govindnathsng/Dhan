@@ -1,0 +1,66 @@
+[build-system]
+requires = ["hatchling==1.33.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "automator"
+version = "0.0.1"
+description = "Safety-first, paper-by-default, long-only CNC trading automator for DhanHQ (single personal account)."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary - personal use" }
+dependencies = [
+    "dhanhq==2.3.0",
+    "pydantic==2.14.3",
+    "PyYAML==6.0.3",
+    "tzdata==2026.6",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==9.2.0",
+    "ruff==0.17.3",
+    "mypy==2.4.1",
+    "types-PyYAML==6.0.12.20261103",
+    "pre-commit==4.7.0",
+    "detect-secrets==1.5.0",
+    "hypothesis==6.170.14",
+]
+
+[project.scripts]
+automator = "automator.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/automator"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "N", "SIM", "RUF", "PT", "DTZ"]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106"]
+# Environment variable NAMES, not values.
+"src/automator/secrets.py" = ["S105"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+mypy_path = "src"
+packages = ["automator"]
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["dhanhq", "dhanhq.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers -m 'not sandbox'"
+markers = [
+    "sandbox: opt-in integration tests against the Dhan SANDBOX only (needs DHAN_SANDBOX_* env vars)",
+]

@@ -1,0 +1,62 @@
+# automator configuration. Copy to config.yaml (gitignored) and edit.
+# Unknown keys, duplicate keys and wrong types make the config INVALID and the app refuses to start.
+# Values above the hard ceilings in src/automator/config/ceilings.py are rejected, not clipped.
+# No secrets belong in this file: credentials are read only from environment variables.
+
+mode: paper                     # paper | sandbox | live. Live is refused before Phase 5.
+timezone: Asia/Kolkata          # the only accepted value
+trading_window: "09:20-15:15"   # IST, NSE trading days only; must lie inside 09:15-15:30
+
+capital:
+  live_capital_cap_inr: 50000   # the most at risk in total, NOT the whole account (ceiling 100000)
+
+risk:                           # percentages are of live_capital_cap_inr
+  risk_per_trade_pct: 0.25      # hard ceiling 0.5
+  max_daily_loss_pct: 0.5       # hard ceiling 1.0
+  max_weekly_loss_pct: 1.5      # hard ceiling 3.0
+  max_drawdown_pct: 4           # hard ceiling 8.0
+  max_open_positions: 2         # hard ceiling 4
+  max_position_value_pct: 20    # hard ceiling 40
+  max_orders_per_day: 10        # hard ceiling 20
+  price_band_pct: 0.5           # limit price must be within this % of last price; ceiling 1.0
+  stale_data_seconds: 60        # no entries if market data is older than this
+  max_consecutive_errors: 3     # trips the automatic kill switch
+
+orders:                         # v1 policy; anything else is invalid
+  exchange_segment: NSE_EQ
+  allowed_product_types: [CNC]
+  allowed_order_types: [LIMIT]
+  allow_short: false
+  require_stop_loss: true
+
+instruments:
+  # Liquid NSE cash-segment ETFs / large caps only. PLACEHOLDERS: confirm before use.
+  whitelist: [NIFTYBEES, JUNIORBEES]
+
+rate_limits:                    # our own budget; each must be <= Dhan's documented limit
+  orders_per_second: 2          # Dhan: 10
+  orders_per_minute: 20         # Dhan: 250
+  orders_per_hour: 100          # Dhan: 1000
+  orders_per_day: 200           # Dhan: 7000
+  modifications_per_order: 10   # Dhan: 25
+  data_requests_per_second: 2   # Dhan: 5
+  data_requests_per_day: 10000  # Dhan: 100000
+  quote_requests_per_second: 1  # Dhan: 1
+  feed_max_connections: 1       # Dhan: 5
+  feed_max_instruments_per_connection: 100  # Dhan: 5000
+
+live:
+  require_manual_approval: true # every live order needs your approval; change only yourself
+  min_paper_trading_days: 42    # live pre-flight needs this many paper-trading days in the journal
+
+paths:
+  state_dir: state
+  data_dir: data
+  reports_dir: reports
+  kill_file: state/KILL         # if this file exists, no new orders are placed
+  lock_file: state/automator.lock
+  journal_db: state/journal.sqlite3
+
+logging:
+  level: INFO
+  json_format: true

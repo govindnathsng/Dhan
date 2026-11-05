@@ -1,0 +1,31 @@
+# Secrets and local config
+.env
+.env.*
+!.env.example
+config.yaml
+*.pem
+*.key
+
+# Runtime state, data, reports
+state/
+data/cache/
+reports/
+*.sqlite3
+*.db
+automator.lock
+KILL
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.coverage
+htmlcov/
