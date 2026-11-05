@@ -82,9 +82,16 @@ pre-commit run --all-files
 Sandbox integration tests (Phase 3) are opt-in: `pytest -m sandbox`. Passing sandbox tests proves
 only that the API plumbing works. It says nothing about the strategy or the AI.
 
+## First steps on your Mac
+
+See [docs/MAC_SETUP.md](docs/MAC_SETUP.md). The guide covers install, loading the daily token
+safely, and `automator dhan-check`: a **read-only** check of your token, Data API plan, DDPI,
+funds, holdings, orders, static IP and live prices. It cannot place orders; a test proves that
+order endpoints are unreachable.
+
 ## Running in paper mode
 
-Phase 0 has only `automator check-config`. Phase 1 adds `automator snapshot`,
+Phase 0 has `automator check-config` and `automator dhan-check` (read-only). Phase 1 adds `automator snapshot`,
 `automator proposals validate <file>`, `automator paper step`, `automator status` and
 `automator kill`. Phase 2 adds the scheduled evening, pre-open and weekly runs.
 
@@ -92,7 +99,7 @@ Phase 0 has only `automator check-config`. Phase 1 adds `automator snapshot`,
 
 | Phase | Content | Status |
 |---|---|---|
-| 0 | Scaffold, strict config with rupee profiles and ceilings, whitelist file, redaction, CLI skeleton, agent safety rules | **done, awaiting review** |
+| 0 | Scaffold, strict config with rupee profiles and ceilings, whitelist file, redaction, CLI skeleton, agent safety rules, read-only `dhan-check` | **done, awaiting review** |
 | 1 | Deterministic core: data, calendar, snapshot, costs, proposal schema, claim checker, risk engine, paper simulator, order manager, journal, kill switch, shadow baseline and backtester, fake-AI tests | not started |
 | 2 | AI research loop in paper (agent prompts, evening/pre-open/weekly runs, Cursor Automations doc) | not started |
 | 3 | Dhan sandbox plumbing and probes, Telegram approval service, live data feed | not started |
