@@ -51,6 +51,8 @@ def test_token_like_strings_redacted(text: str) -> None:
         ("client-id: 1100223344", "1100223344"),
         ("DHAN_CLIENT_ID=1100223344", "1100223344"),
         ("TELEGRAM_CHAT_ID=-100998877", "-100998877"),
+        ("TELEGRAM_ALLOWED_USER_ID=55667788", "55667788"),
+        ("DHAN_DATA_ACCESS_TOKEN=abc.def-ghi", "abc.def-ghi"),
     ],
 )
 def test_key_value_secrets_redacted(text: str, secret: str) -> None:

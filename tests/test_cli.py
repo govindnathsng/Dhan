@@ -7,34 +7,33 @@ from pathlib import Path
 import pytest
 
 from automator.cli import EXIT_CONFIG_INVALID, EXIT_MODE_REFUSED, EXIT_OK, main
-from automator.secrets import SECRET_ENV_VARS, credential_status, get_secret
-
-EXAMPLE = Path(__file__).resolve().parents[1] / "config.example.yaml"
+from automator.secrets import credential_status, get_secret
+from tests.conftest import EXAMPLE_CONFIG as EXAMPLE
 
 
 @pytest.fixture(autouse=True)
-def _no_creds(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    for name in (*SECRET_ENV_VARS, "DHAN_LIVE_ENABLED", "AUTOMATOR_CONFIG"):
-        monkeypatch.delenv(name, raising=False)
-    monkeypatch.chdir(tmp_path)
+def _wl(workdir: Path) -> None:
+    """All CLI tests run in a dir that has config/whitelist.yaml."""
 
 
 def test_check_config_defaults_no_credentials(capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["check-config"]) == EXIT_OK
     out = capsys.readouterr().out
-    assert "effective mode       : paper" in out
+    assert "effective mode        : paper" in out
+    assert "54 instruments" in out
     assert "<built-in defaults>" in out
     assert "not set" in out
 
 
 def test_check_config_example(capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["check-config", "--config", str(EXAMPLE)]) == EXIT_OK
-    assert "INR 125.00" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "Rs    125.00  (ceiling Rs 250.00)" in out
 
 
 def test_check_config_invalid(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     p = tmp_path / "bad.yaml"
-    p.write_text("risk:\n  risk_per_trade_pct: 2\n")
+    p.write_text("rules:\n  min_net_reward_to_risk: 1.0\n")
     assert main(["check-config", "--config", str(p)]) == EXIT_CONFIG_INVALID
     assert "REFUSING TO START" in capsys.readouterr().err
 
@@ -43,10 +42,18 @@ def test_check_config_live_refused(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     p = tmp_path / "live.yaml"
-    p.write_text("mode: live\n")
+    p.write_text("mode: live\nprofile: live_canary\n")
     monkeypatch.setenv("DHAN_LIVE_ENABLED", "true")
     assert main(["check-config", "--config", str(p), "--live"]) == EXIT_MODE_REFUSED
-    assert "Phase 5" in capsys.readouterr().err
+    err = capsys.readouterr().err
+    assert "Phase 6" in err
+    assert "live-host-only variables are set: DHAN_LIVE_ENABLED" in err
+
+
+def test_missing_whitelist_refuses(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    (tmp_path / "config" / "whitelist.yaml").unlink()
+    assert main(["check-config"]) == EXIT_CONFIG_INVALID
+    assert "whitelist file not found" in capsys.readouterr().err
 
 
 def test_live_flag_on_paper_config_refused() -> None:

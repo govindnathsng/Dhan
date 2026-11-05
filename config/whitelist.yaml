@@ -1,0 +1,65 @@
+# Instrument whitelist. MAINTAINED BY THE ACCOUNT OWNER ONLY. The AI agent must never edit this file.
+# NSE cash segment (NSE_EQ) only. Long-only CNC. security_id is filled from the Dhan instrument master (Phase 1).
+# category drives STT exemption: gold / liquid / gilt ETFs are STT-exempt; everything else is 'equity'.
+#
+# [verify] Nifty 50 constituents below are a best-effort list as of late 2025 (e.g. TMPV after the Tata Motors
+# demerger, INDIGO and MAXHEALTH added in Sep 2025). Check against niftyindices.com before Phase 1 and after
+# every semi-annual index rebalance.
+version: 1
+instruments:
+  # Liquid ETFs
+  - {symbol: NIFTYBEES, kind: ETF, category: equity, note: Nifty 50 ETF}
+  - {symbol: JUNIORBEES, kind: ETF, category: equity, note: Nifty Next 50 ETF}
+  - {symbol: BANKBEES, kind: ETF, category: equity, note: Nifty Bank ETF}
+  - {symbol: GOLDBEES, kind: ETF, category: gold, note: Gold ETF (STT-exempt)}
+  # Nifty 50 constituents [verify]
+  - {symbol: ADANIENT, kind: EQUITY}
+  - {symbol: ADANIPORTS, kind: EQUITY}
+  - {symbol: APOLLOHOSP, kind: EQUITY}
+  - {symbol: ASIANPAINT, kind: EQUITY}
+  - {symbol: AXISBANK, kind: EQUITY}
+  - {symbol: BAJAJ-AUTO, kind: EQUITY}
+  - {symbol: BAJFINANCE, kind: EQUITY}
+  - {symbol: BAJAJFINSV, kind: EQUITY}
+  - {symbol: BEL, kind: EQUITY}
+  - {symbol: BHARTIARTL, kind: EQUITY}
+  - {symbol: CIPLA, kind: EQUITY}
+  - {symbol: COALINDIA, kind: EQUITY}
+  - {symbol: DRREDDY, kind: EQUITY}
+  - {symbol: EICHERMOT, kind: EQUITY}
+  - {symbol: ETERNAL, kind: EQUITY}
+  - {symbol: GRASIM, kind: EQUITY}
+  - {symbol: HCLTECH, kind: EQUITY}
+  - {symbol: HDFCBANK, kind: EQUITY}
+  - {symbol: HDFCLIFE, kind: EQUITY}
+  - {symbol: HINDALCO, kind: EQUITY}
+  - {symbol: HINDUNILVR, kind: EQUITY}
+  - {symbol: ICICIBANK, kind: EQUITY}
+  - {symbol: INDIGO, kind: EQUITY}
+  - {symbol: INFY, kind: EQUITY}
+  - {symbol: ITC, kind: EQUITY}
+  - {symbol: JIOFIN, kind: EQUITY}
+  - {symbol: JSWSTEEL, kind: EQUITY}
+  - {symbol: KOTAKBANK, kind: EQUITY}
+  - {symbol: LT, kind: EQUITY}
+  - {symbol: "M&M", kind: EQUITY}
+  - {symbol: MARUTI, kind: EQUITY}
+  - {symbol: MAXHEALTH, kind: EQUITY}
+  - {symbol: NESTLEIND, kind: EQUITY}
+  - {symbol: NTPC, kind: EQUITY}
+  - {symbol: ONGC, kind: EQUITY}
+  - {symbol: POWERGRID, kind: EQUITY}
+  - {symbol: RELIANCE, kind: EQUITY}
+  - {symbol: SBILIFE, kind: EQUITY}
+  - {symbol: SBIN, kind: EQUITY}
+  - {symbol: SHRIRAMFIN, kind: EQUITY}
+  - {symbol: SUNPHARMA, kind: EQUITY}
+  - {symbol: TATACONSUM, kind: EQUITY}
+  - {symbol: TMPV, kind: EQUITY}
+  - {symbol: TATASTEEL, kind: EQUITY}
+  - {symbol: TCS, kind: EQUITY}
+  - {symbol: TECHM, kind: EQUITY}
+  - {symbol: TITAN, kind: EQUITY}
+  - {symbol: TRENT, kind: EQUITY}
+  - {symbol: ULTRACEMCO, kind: EQUITY}
+  - {symbol: WIPRO, kind: EQUITY}

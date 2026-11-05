@@ -1,7 +1,8 @@
 """Runtime mode resolution. Never falls back to live.
 
-Phase 0-4: live mode is always refused. The full gate (section 4 of the plan:
-typed confirmation phrase + pre-flight checks) is implemented in Phase 5.
+Before Phase 6, live mode is always refused. The full gate (plan section 5:
+typed confirmation phrase, pre-flight checks, mandatory Telegram approval) is
+implemented in Phase 6.
 """
 
 from __future__ import annotations
@@ -9,9 +10,9 @@ from __future__ import annotations
 import os
 from collections.abc import Mapping
 
-from automator.config.models import AppConfig, Mode
+from automator.config.models import AppConfig, Mode, ProfileKind
+from automator.secrets import LIVE_ENABLED
 
-LIVE_ENABLED_ENV_VAR = "DHAN_LIVE_ENABLED"
 LIVE_GATE_IMPLEMENTED = False
 
 
@@ -32,14 +33,16 @@ def live_gate_missing_steps(
     missing: list[str] = []
     if config.mode is not Mode.LIVE:
         missing.append("(a) config 'mode' is not 'live'")
-    if environ.get(LIVE_ENABLED_ENV_VAR) != "true":
-        missing.append(f"(b) environment variable {LIVE_ENABLED_ENV_VAR} is not exactly 'true'")
+    elif config.active_profile.kind is not ProfileKind.LIVE:
+        missing.append(f"(a) profile {config.profile!r} is not a live profile")
+    if environ.get(LIVE_ENABLED) != "true":
+        missing.append(f"(b) environment variable {LIVE_ENABLED} is not exactly 'true'")
     if not live_flag:
         missing.append("(c) CLI flag --live was not given")
     if not LIVE_GATE_IMPLEMENTED:
         missing.append(
-            "(d)+(e) confirmation phrase and pre-flight checks are not implemented "
-            "until Phase 5; live trading is impossible in this version"
+            "(d)-(f) confirmation phrase, pre-flight checks and Telegram approval are not "
+            "implemented until Phase 6; live trading is impossible in this version"
         )
     return missing
 
@@ -47,7 +50,7 @@ def live_gate_missing_steps(
 def resolve_mode(
     config: AppConfig, live_flag: bool = False, env: Mapping[str, str] | None = None
 ) -> Mode:
-    """Return the mode to run in, or raise. The result is never LIVE in Phase 0-4."""
+    """Return the mode to run in, or raise. The result is never LIVE before Phase 6."""
     if config.mode is Mode.LIVE or live_flag:
         if config.mode is not Mode.LIVE:
             raise ModeError(

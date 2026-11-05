@@ -1,59 +1,104 @@
-# automator configuration. Copy to config.yaml (gitignored) and edit.
+# automator configuration. Copy to config.yaml (gitignored) and edit. OWNER-EDITED ONLY:
+# the AI agent must never edit this file, config/whitelist.yaml, or anything under config/.
 # Unknown keys, duplicate keys and wrong types make the config INVALID and the app refuses to start.
-# Values above the hard ceilings in src/automator/config/ceilings.py are rejected, not clipped.
-# No secrets belong in this file: credentials are read only from environment variables.
+# Hard ceilings/floors live in src/automator/config/ceilings.py; values past them are rejected, not clipped.
+# No secrets belong here: credentials are read only from environment variables.
 
-mode: paper                     # paper | sandbox | live. Live is refused before Phase 5.
+mode: paper                     # paper | sandbox | live. Live is refused before Phase 6.
+profile: paper                  # which entry under `profiles` is active; live needs a profile of kind live
 timezone: Asia/Kolkata          # the only accepted value
-trading_window: "09:20-15:15"   # IST, NSE trading days only; must lie inside 09:15-15:30
+entry_window: "09:30-14:30"     # IST, NSE trading days only; must lie inside 09:15-15:30
 
-capital:
-  live_capital_cap_inr: 50000   # the most at risk in total, NOT the whole account (ceiling 100000)
+# Rupee limits per capital profile. Ceilings are % of capital_inr (shown in brackets for these defaults).
+profiles:
+  paper:
+    kind: paper
+    capital_inr: 50000            # ceiling 50000 for any profile
+    risk_per_trade_inr: 125       # ceiling 0.5% = 250
+    max_daily_loss_inr: 250       # realised + open mark-to-market; ceiling 1% = 500
+    max_weekly_loss_inr: 750      # ceiling 3% = 1500
+    max_drawdown_halt_inr: 2000   # below equity peak; ceiling 8% = 4000
+    max_open_positions: 2         # ceiling 4
+    max_position_value_inr: 10000 # ceiling 40% = 20000
+    max_total_invested_inr: 20000 # ceiling 80% = 40000
+    max_new_entries_per_week: 3   # ceiling 5
+    max_orders_per_day: 6         # ceiling 10
+    max_proposals_per_day: 3      # ceiling 5
+  live_canary:
+    kind: live
+    capital_inr: 25000            # scale-up is manual, at most 2x per step
+    risk_per_trade_inr: 60        # ceiling 0.5% = 125
+    max_daily_loss_inr: 125       # ceiling 1% = 250
+    max_weekly_loss_inr: 375      # ceiling 3% = 750
+    max_drawdown_halt_inr: 1000   # ceiling 8% = 2000
+    max_open_positions: 1
+    max_position_value_inr: 5000  # ceiling 40% = 10000
+    max_total_invested_inr: 5000  # ceiling 80% = 20000
+    max_new_entries_per_week: 2
+    max_orders_per_day: 4
+    max_proposals_per_day: 3
 
-risk:                           # percentages are of live_capital_cap_inr
-  risk_per_trade_pct: 0.25      # hard ceiling 0.5
-  max_daily_loss_pct: 0.5       # hard ceiling 1.0
-  max_weekly_loss_pct: 1.5      # hard ceiling 3.0
-  max_drawdown_pct: 4           # hard ceiling 8.0
-  max_open_positions: 2         # hard ceiling 4
-  max_position_value_pct: 20    # hard ceiling 40
-  max_orders_per_day: 10        # hard ceiling 20
-  price_band_pct: 0.5           # limit price must be within this % of last price; ceiling 1.0
-  stale_data_seconds: 60        # no entries if market data is older than this
-  max_consecutive_errors: 3     # trips the automatic kill switch
+rules:                            # shared by all profiles; protective values may only be tightened
+  entry_price_band_pct: 0.75      # limit price vs LTP, re-checked at approval and placement; ceiling 1.0
+  stop_distance_min_pct: 1.0      # floor 1.0
+  stop_distance_max_pct: 6.0      # ceiling 6.0
+  stop_min_atr_multiple: 0.75     # stop distance >= this x ATR(14); floor 0.75
+  atr_period: 14
+  min_net_reward_to_risk: 1.5     # after estimated costs; floor 1.5
+  reentry_cooldown_days: 5        # same instrument after a stop-out; floor 5
+  losing_streak_losses: 3         # this many losses in a row -> pause; ceiling 3
+  losing_streak_pause_trading_days: 2   # floor 2
+  losing_streak_requires_review_note: true
+  min_confidence: 0.6             # advisory filter only; never increases size; floor 0.5
+  stale_data_seconds: 60          # no entries on data older than this
+  max_consecutive_errors: 3       # trips the automatic kill switch
+  max_claim_mismatches_per_day: 2 # repeated AI claim-check failures trip the kill switch
+  auto_exit_on_loss_breach: false # on daily/weekly breach: block + cancel entries; do not auto-sell by default
 
-orders:                         # v1 policy; anything else is invalid
+orders:                           # v1 policy; anything else is invalid
   exchange_segment: NSE_EQ
   allowed_product_types: [CNC]
   allowed_order_types: [LIMIT]
   allow_short: false
-  require_stop_loss: true
+  require_protective_stop: true
 
 instruments:
-  # Liquid NSE cash-segment ETFs / large caps only. PLACEHOLDERS: confirm before use.
-  whitelist: [NIFTYBEES, JUNIORBEES]
+  whitelist_file: config/whitelist.yaml   # relative to this file's directory
+  blackout: []                    # e.g. - {symbol: INFY, start: 2026-11-10, end: 2026-11-12, reason: results}
 
-rate_limits:                    # our own budget; each must be <= Dhan's documented limit
-  orders_per_second: 2          # Dhan: 10
-  orders_per_minute: 20         # Dhan: 250
-  orders_per_hour: 100          # Dhan: 1000
-  orders_per_day: 200           # Dhan: 7000
-  modifications_per_order: 10   # Dhan: 25
-  data_requests_per_second: 2   # Dhan: 5
-  data_requests_per_day: 10000  # Dhan: 100000
-  quote_requests_per_second: 1  # Dhan: 1
-  feed_max_connections: 1       # Dhan: 5
+costs:                            # Dhan delivery charges, Nov 2026. RE-CHECK against Dhan's pricing page.
+  rates_checked_on: 2026-11-05
+  brokerage_per_order_inr: 0
+  stt_pct: 0.1                    # buy and sell; not on gold/liquid/gilt ETFs
+  stt_exempt_categories: [gold, liquid, gilt]
+  stamp_duty_buy_pct: 0.015
+  exchange_txn_pct: 0.003         # NSE, approximate
+  sebi_fee_pct: 0.0001
+  gst_pct: 18                     # on brokerage + transaction + SEBI charges (+ DP charge)
+  dp_charge_per_scrip_sell_inr: 12.5    # per scrip sold per day, plus GST (= 14.75)
+
+approval:
+  paper_mode: auto                # auto | telegram (practice). LIVE IS ALWAYS TELEGRAM; not configurable.
+  expiry_minutes: 60              # ceiling 120
+  latest_approval_time: "15:00"   # approvals always expire at or before this time
+
+rate_limits:                      # our own budget; each must be <= Dhan's documented limit
+  orders_per_second: 2            # Dhan: 10
+  orders_per_minute: 20           # Dhan: 250
+  orders_per_hour: 100            # Dhan: 1000
+  orders_per_day: 200             # Dhan: 7000
+  modifications_per_order: 10     # Dhan: 25
+  data_requests_per_second: 2     # Dhan: 5
+  data_requests_per_day: 10000    # Dhan: 100000
+  quote_requests_per_second: 1    # Dhan: 1
+  feed_max_connections: 1         # Dhan: 5
   feed_max_instruments_per_connection: 100  # Dhan: 5000
-
-live:
-  require_manual_approval: true # every live order needs your approval; change only yourself
-  min_paper_trading_days: 42    # live pre-flight needs this many paper-trading days in the journal
 
 paths:
   state_dir: state
   data_dir: data
   reports_dir: reports
-  kill_file: state/KILL         # if this file exists, no new orders are placed
+  kill_file: state/KILL           # if this file exists, no new orders are placed
   lock_file: state/automator.lock
   journal_db: state/journal.sqlite3
 

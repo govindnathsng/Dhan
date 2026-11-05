@@ -19,7 +19,7 @@ REDACTED = "[REDACTED]"
 
 _SENSITIVE_KEYS = (
     r"access[-_ ]?token|token|jwt|pin|totp|otp|password|passwd|secret|api[-_]?key"
-    r"|authorization|client[-_ ]?id|bot[-_ ]?token|chat[-_ ]?id"
+    r"|authorization|client[-_ ]?id|bot[-_ ]?token|chat[-_ ]?id|user[-_ ]?id"
 )
 
 _PATTERNS: tuple[re.Pattern[str], ...] = (

@@ -13,6 +13,7 @@ import yaml
 from pydantic import ValidationError
 
 from automator.config.models import AppConfig
+from automator.config.whitelist import Whitelist
 
 CONFIG_ENV_VAR = "AUTOMATOR_CONFIG"
 DEFAULT_CONFIG_PATH = Path("config.yaml")
@@ -26,7 +27,9 @@ class ConfigError(Exception):
 class LoadedConfig:
     config: AppConfig
     source: Path | None  # None means built-in defaults were used
-    config_hash: str
+    whitelist: Whitelist
+    whitelist_path: Path
+    config_hash: str  # covers both the config and the whitelist
 
 
 class _UniqueKeyLoader(yaml.SafeLoader):
@@ -50,31 +53,47 @@ _UniqueKeyLoader.add_constructor(
 )
 
 
-def parse_config_text(text: str) -> AppConfig:
+def _load_mapping(text: str, what: str) -> dict[str, Any]:
     try:
         data = yaml.load(text, Loader=_UniqueKeyLoader)  # noqa: S506 - SafeLoader subclass
     except yaml.YAMLError as exc:
-        raise ConfigError(f"config is not valid YAML: {exc}") from exc
+        raise ConfigError(f"{what} is not valid YAML: {exc}") from exc
     if data is None:
         data = {}
     if not isinstance(data, dict):
-        raise ConfigError("config root must be a mapping")
+        raise ConfigError(f"{what} root must be a mapping")
+    return data
+
+
+def parse_config_text(text: str) -> AppConfig:
+    data = _load_mapping(text, "config")
     try:
         return AppConfig.model_validate(data)
     except ValidationError as exc:
-        raise ConfigError(_format_validation_error(exc)) from exc
+        raise ConfigError(_format_validation_error(exc, "config")) from exc
 
 
-def _format_validation_error(exc: ValidationError) -> str:
-    lines = ["config is invalid:"]
+def parse_whitelist_text(text: str) -> Whitelist:
+    data = _load_mapping(text, "whitelist")
+    try:
+        return Whitelist.model_validate(data)
+    except ValidationError as exc:
+        raise ConfigError(_format_validation_error(exc, "whitelist")) from exc
+
+
+def _format_validation_error(exc: ValidationError, what: str) -> str:
+    lines = [f"{what} is invalid:"]
     for err in exc.errors():
         loc = ".".join(str(p) for p in err["loc"]) or "<root>"
         lines.append(f"  - {loc}: {err['msg']}")
     return "\n".join(lines)
 
 
-def config_hash(config: AppConfig) -> str:
-    payload = json.dumps(config.model_dump(mode="json"), sort_keys=True).encode()
+def config_hash(config: AppConfig, whitelist: Whitelist) -> str:
+    payload = json.dumps(
+        {"config": config.model_dump(mode="json"), "whitelist": whitelist.model_dump(mode="json")},
+        sort_keys=True,
+    ).encode()
     return hashlib.sha256(payload).hexdigest()[:16]
 
 
@@ -100,6 +119,22 @@ def resolve_config_path(explicit: str | Path | None) -> Path | None:
 
 
 def load_config(explicit: str | Path | None = None) -> LoadedConfig:
+    """Load config and its whitelist. A missing or invalid whitelist is a ConfigError."""
     path = resolve_config_path(explicit)
     cfg = AppConfig() if path is None else parse_config_text(path.read_text(encoding="utf-8"))
-    return LoadedConfig(config=cfg, source=path, config_hash=config_hash(cfg))
+    wl_path = cfg.instruments.whitelist_file
+    if not wl_path.is_absolute():
+        wl_path = (path.parent if path is not None else Path.cwd()) / wl_path
+    if not wl_path.is_file():
+        raise ConfigError(f"whitelist file not found: {wl_path}")
+    whitelist = parse_whitelist_text(wl_path.read_text(encoding="utf-8"))
+    for b in cfg.instruments.blackout:
+        if b.symbol not in whitelist.symbols:
+            raise ConfigError(f"blackout symbol {b.symbol} is not in the whitelist")
+    return LoadedConfig(
+        config=cfg,
+        source=path,
+        whitelist=whitelist,
+        whitelist_path=wl_path,
+        config_hash=config_hash(cfg, whitelist),
+    )

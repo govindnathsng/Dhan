@@ -37,3 +37,18 @@ def test_only_brokers_package_imports_dhanhq() -> None:
 def test_example_config_is_paper() -> None:
     text = (ROOT / "config.example.yaml").read_text()
     assert re.search(r"^mode:\s*paper\b", text, re.MULTILINE)
+
+
+def test_env_example_lists_exactly_the_known_variables() -> None:
+    from automator.secrets import LIVE_ENABLED, SECRET_ENV_VARS
+
+    names = {
+        line.partition("=")[0].strip()
+        for line in (ROOT / ".env.example").read_text().splitlines()
+        if line.strip() and not line.startswith("#")
+    }
+    assert names == {*SECRET_ENV_VARS, LIVE_ENABLED}
+
+
+def test_whitelist_is_committed_and_not_ignored() -> None:
+    assert (ROOT / "config" / "whitelist.yaml").is_file()
