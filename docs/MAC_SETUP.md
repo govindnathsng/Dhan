@@ -4,15 +4,20 @@ What this gets you **today**: the app installed on your Mac, your config validat
 **read-only** check that your Dhan token, Data API plan, DDPI, funds, holdings, orders, static IP
 and market data all work. Nothing in this version can place an order.
 
-## 1. Install (one time)
+## 1. Pull into Documents/Dhan and install (one time)
+
+The folder you created is `~/Documents/Dhan`. It must be **empty** before the clone
+(a new folder is empty). The code to use is branch `cursor/phase0-scaffold-9adc`.
+The default branch on GitHub is still the empty starter commit.
+
+Open **Terminal** (not the IDE yet) and run:
 
 ```bash
-# Homebrew (skip if already installed): https://brew.sh
+# Homebrew, if you do not already have git and Python 3.12: https://brew.sh
 brew install python@3.12 git
 
-git clone <your repo URL> automator
-cd automator
-git checkout cursor/phase0-scaffold-9adc   # until it is merged
+cd ~/Documents/Dhan
+git clone -b cursor/phase0-scaffold-9adc https://github.com/govindnathsng/Dhan.git .
 
 python3.12 -m venv .venv
 source .venv/bin/activate
@@ -23,6 +28,35 @@ pytest -q                 # expect: all passed
 automator check-config    # expect: effective mode: paper, config OK
 ```
 
+`git clone ... .` puts the files inside the folder you already made. If that command
+says the directory is not empty, move whatever is in `Documents/Dhan` out, or delete
+the folder only if you created it and it has nothing you need, then run the clone again.
+
+Later, to pick up new commits:
+
+```bash
+cd ~/Documents/Dhan
+git pull origin cursor/phase0-scaffold-9adc
+```
+
+## 1b. Open the folder in Cursor (or VS Code)
+
+1. Cursor: **File → Open Folder…** and choose `Documents/Dhan`. Trust the folder when asked.
+2. **View → Command Palette**, run **Python: Select Interpreter**, and pick
+   `.venv/bin/python` (it appears after the install above).
+3. **Terminal → New Terminal**. The prompt should show `(.venv)`. If it does not, run
+   `source .venv/bin/activate`.
+4. In that terminal:
+
+```bash
+automator check-config
+```
+
+You should see `effective mode : paper` and `config OK`. No token is needed for this.
+
+The workspace already points the IDE at `.venv` (`.vscode/settings.json`). Do not open a
+parent folder such as Documents; open `Dhan` itself, or the checks and imports will not match.
+
 ## 2. Every morning: load a fresh token (never paste it into chat or a file)
 
 1. Log in to web.dhan.co, open My Profile, then "Access DhanHQ APIs", and generate an Access Token
@@ -30,7 +64,7 @@ automator check-config    # expect: effective mode: paper, config OK
 2. In the terminal where you will run the app:
 
 ```bash
-cd automator && source .venv/bin/activate
+cd ~/Documents/Dhan && source .venv/bin/activate
 read -rs DHAN_CLIENT_ID && export DHAN_CLIENT_ID        # type your client ID, press Enter (not shown)
 read -rs DHAN_ACCESS_TOKEN && export DHAN_ACCESS_TOKEN  # paste the token, press Enter (not shown)
 ```
